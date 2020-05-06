@@ -76,7 +76,37 @@ pub fn spawn_local<F>(future: F)
 where
     F: Future<Output = ()> + 'static,
 {
-    task::Task::spawn(Box::pin(future));
+    task::Task::spawn(Box::pin(future), false);
+}
+
+/// Runs a Rust `Future` on the current thread.
+///
+/// The `future` must be `'static` because it will be scheduled
+/// to run in the background and cannot contain any stack references.
+///
+/// The `future` will always be run on the next microtask tick even if it
+/// immediately returns `Poll::Ready`.
+///
+/// # Panics
+///
+/// This function has the same panic behavior as `future_to_promise`.
+#[inline]
+pub fn spawn_local_high_priority<F>(future: F)
+where
+    F: Future<Output = ()> + 'static,
+{
+    task::Task::spawn(Box::pin(future), true);
+}
+
+
+/// Set the maximum number of tasks that the executor will run during a tick.
+/// 
+/// Once this budget is exceeded, it will yield to allow the event loop to process other tasks 
+/// before resuming work.
+pub fn set_coop_budget(budget: u32) {
+    crate::queue::QUEUE.with(|queue| {
+        queue.set_coop_budget(budget);
+    });
 }
 
 struct Inner {

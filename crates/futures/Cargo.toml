@@ -12,6 +12,7 @@ edition = "2018"
 
 [dependencies]
 cfg-if = "0.1.9"
+log = "0.4"
 js-sys = { path = "../js-sys", version = '0.3.39' }
 wasm-bindgen = { path = "../..", version = '0.2.62' }
 
@@ -20,7 +21,13 @@ path = "../web-sys"
 version = "0.3.24"
 features = [
     "MessageEvent",
-    "Worker",
+    "Worker"
+]
+[target.'cfg(not(target_feature = "atomics"))'.dependencies.web-sys]
+path = "../web-sys"
+version = "0.3.24"
+features = [
+    "Window"
 ]
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

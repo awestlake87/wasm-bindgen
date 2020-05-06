@@ -11,6 +11,7 @@ struct Inner {
 }
 
 pub(crate) struct Task {
+    high_priority: bool,
     // The actual Future that we're executing as part of this task.
     //
     // This is an Option so that the Future can be immediately dropped when it's
@@ -22,8 +23,9 @@ pub(crate) struct Task {
 }
 
 impl Task {
-    pub(crate) fn spawn(future: Pin<Box<dyn Future<Output = ()> + 'static>>) {
+    pub(crate) fn spawn(future: Pin<Box<dyn Future<Output = ()> + 'static>>, high_priority: bool) {
         let this = Rc::new(Self {
+            high_priority,
             inner: RefCell::new(None),
             is_queued: Cell::new(false),
         });
@@ -44,7 +46,11 @@ impl Task {
         }
 
         crate::queue::QUEUE.with(|queue| {
-            queue.push_task(Rc::clone(this));
+            if this.high_priority {
+                queue.push_high_priority_task(Rc::clone(this));
+            } else {
+                queue.push_task(Rc::clone(this));
+            }
         });
     }
 
